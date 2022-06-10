@@ -13,7 +13,9 @@ import io.mockk.clearAllMocks
 import io.mockk.every
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.core.ValueOperations
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.ExchangeResult
 import org.springframework.test.web.reactive.server.WebTestClient
 import ru.mplain.urlshortener.model.ShortenUrlRequest
@@ -21,9 +23,11 @@ import ru.mplain.urlshortener.repository.ShortenedUrlRepository
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
+@ActiveProfiles("redis", "apache", "base64")
 class UrlShortenerTest(
     private val webTestClient: WebTestClient,
-    private val repository: ShortenedUrlRepository
+    private val repository: ShortenedUrlRepository,
+    private val redisTemplate: RedisTemplate<String, Any>
 ) : FeatureSpec() {
 
     @SpykBean
@@ -33,6 +37,7 @@ class UrlShortenerTest(
 
     override suspend fun afterEach(testCase: TestCase, result: TestResult) {
         repository.deleteAll()
+        redisTemplate.delete("id")
         clearAllMocks()
     }
 
@@ -43,16 +48,21 @@ class UrlShortenerTest(
                     .expectStatus().isCreated
                     .expectBody().isEmpty
                     .shortenedUri()
-                    .shouldBe("MQ==")
+                    .shouldBe("MQ")
             }
             scenario("value exists") {
-                shortenUrl(EXAMPLE_URL)
-
                 shortenUrl(EXAMPLE_URL)
                     .expectStatus().isCreated
                     .expectBody().isEmpty
                     .shortenedUri()
-                    .shouldBe("Mw==")
+                    .shouldBe("MQ")
+
+                redisValueOps.increment("id", 1000000)
+                shortenUrl(EXAMPLE_URL)
+                    .expectStatus().isCreated
+                    .expectBody().isEmpty
+                    .shortenedUri()
+                    .shouldBe("MTAwMDAwMg")
             }
             scenario("invalid url") {
                 shortenUrl("https://www.google.com/ qwerty")

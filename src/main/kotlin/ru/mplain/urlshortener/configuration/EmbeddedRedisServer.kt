@@ -8,7 +8,7 @@ import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 
 @Configuration
-@Profile("!prod")
+@Profile("redis", "!prod")
 class EmbeddedRedisServer(redisProperties: RedisProperties) {
 
     private val redisServer = RedisServer(redisProperties.port)

@@ -1,34 +1,32 @@
 package ru.mplain.urlshortener.service
 
-import org.apache.commons.validator.routines.UrlValidator
-import org.springframework.data.redis.core.ValueOperations
-import org.springframework.data.repository.findByIdOrNull
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.server.ServerWebInputException
-import ru.mplain.urlshortener.model.ShortenedUrl
-import ru.mplain.urlshortener.repository.ShortenedUrlRepository
-import java.util.*
+import ru.mplain.urlshortener.configuration.SHORTENED_URL
+import ru.mplain.urlshortener.service.dao.UrlShortenerDao
+import ru.mplain.urlshortener.service.encoder.EncoderService
+import ru.mplain.urlshortener.service.sequence.SequenceService
+import ru.mplain.urlshortener.service.validator.ValidatorService
 
 @Service
 class UrlShortenerService(
-    private val repository: ShortenedUrlRepository,
-    private val redisValueOps: ValueOperations<String, Any>
+    private val validatorService: ValidatorService,
+    private val sequenceService: SequenceService,
+    private val encoderService: EncoderService,
+    private val dao: UrlShortenerDao
 ) {
 
     fun shorten(url: String): String {
-        if (!urlValidator.isValid(url)) throw ServerWebInputException("Invalid url")
-        val id = redisValueOps.increment("id")!!
-        val encoded = Base64.getEncoder().encodeToString(id.toString().toByteArray())
-        repository.save(ShortenedUrl(encoded, url))
-        return encoded
+        if (!validatorService.validate(url)) throw ServerWebInputException("Invalid url")
+        val id = sequenceService.nextval()
+        val encoded = encoderService.encode(id)
+        return dao.save(encoded, url)
     }
 
-    fun getById(id: String): String {
-        val result = repository.findByIdOrNull(id)
-        return result?.url ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Not Found")
-    }
+    @Cacheable(SHORTENED_URL)
+    fun getById(id: String): String =
+        dao.getById(id) ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Not Found")
 }
-
-private val urlValidator = UrlValidator()
