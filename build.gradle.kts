@@ -23,6 +23,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+    implementation("commons-validator:commons-validator:1.7")
     implementation("org.springdoc:springdoc-openapi-webflux-ui:1.6.9")
     implementation("it.ozimov:embedded-redis:0.7.3") { exclude(module = "slf4j-simple") }
     testImplementation("org.springframework.boot:spring-boot-starter-test")

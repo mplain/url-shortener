@@ -5,4 +5,4 @@ import org.springframework.stereotype.Repository
 import ru.mplain.urlshortener.model.ShortenedUrl
 
 @Repository
-interface ShortenedUrlRepository : CrudRepository<ShortenedUrl, Long>
+interface ShortenedUrlRepository : CrudRepository<ShortenedUrl, String>

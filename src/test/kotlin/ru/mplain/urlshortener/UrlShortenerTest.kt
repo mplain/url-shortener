@@ -8,23 +8,26 @@ import io.kotest.core.test.TestResult
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import io.lettuce.core.RedisException
-import io.mockk.InternalPlatformDsl.toStr
 import io.mockk.clearAllMocks
 import io.mockk.every
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.data.redis.core.ValueOperations
+import org.springframework.test.web.reactive.server.ExchangeResult
 import org.springframework.test.web.reactive.server.WebTestClient
 import ru.mplain.urlshortener.model.ShortenUrlRequest
 import ru.mplain.urlshortener.repository.ShortenedUrlRepository
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-class UrlShortenerTest(private val webTestClient: WebTestClient) : FeatureSpec() {
+class UrlShortenerTest(
+    private val webTestClient: WebTestClient,
+    private val repository: ShortenedUrlRepository
+) : FeatureSpec() {
 
     @SpykBean
-    lateinit var repository: ShortenedUrlRepository
+    lateinit var redisValueOps: ValueOperations<String, Any>
 
     override fun extensions(): List<Extension> = listOf(SpringExtension)
 
@@ -36,37 +39,31 @@ class UrlShortenerTest(private val webTestClient: WebTestClient) : FeatureSpec()
     init {
         feature("shorten url") {
             scenario("success") {
-                shortenUrl("https://www.google.com/qwerty")
+                shortenUrl(EXAMPLE_URL)
                     .expectStatus().isCreated
                     .expectBody().isEmpty
-                    .responseHeaders
-                    .location
-                    .shouldNotBeNull()
-                    .path
-                    .shouldBe("/abc")
+                    .shortenedUri()
+                    .shouldBe("MQ==")
             }
             scenario("value exists") {
-                shortenUrl("https://www.google.com/qwerty")
+                shortenUrl(EXAMPLE_URL)
 
-                shortenUrl("https://www.google.com/qwerty")
+                shortenUrl(EXAMPLE_URL)
                     .expectStatus().isCreated
                     .expectBody().isEmpty
-                    .responseHeaders
-                    .location
-                    .shouldNotBeNull()
-                    .toString()
-                    .shouldBe("/abc")
+                    .shortenedUri()
+                    .shouldBe("Mw==")
             }
             scenario("invalid url") {
                 shortenUrl("https://www.google.com/ qwerty")
                     .expectStatus().isBadRequest
                     .expectBody()
                     .jsonPath("message")
-                    .isEqualTo("invalid url")
+                    .isEqualTo("Invalid url")
             }
             scenario("network error") {
-                every { repository.save(any()) } throws RedisException("Network error")
-                shortenUrl("https://www.google.com/qwerty")
+                every { redisValueOps.increment(any()) } throws RedisException("Network error")
+                shortenUrl(EXAMPLE_URL)
                     .expectStatus().is5xxServerError
                     .expectBody()
                     .jsonPath("message")
@@ -75,26 +72,24 @@ class UrlShortenerTest(private val webTestClient: WebTestClient) : FeatureSpec()
         }
         feature("redirect") {
             scenario("success") {
-                val shortenedUrl = shortenUrl("https://www.google.com/qwerty")
+                val shortenedUri = shortenUrl(EXAMPLE_URL)
                     .expectStatus().isCreated
                     .expectBody().isEmpty
-                    .responseHeaders
-                    .location
-                    .shouldNotBeNull()
-                    .toString()
+                    .shortenedUri()
 
-                redirect(shortenedUrl)
-                    .expectStatus().isNotFound
-                    .expectBody()
-                    .toStr()
-                    .shouldContain("not found on this server")
+                redirect(shortenedUri)
+                    .expectStatus().isPermanentRedirect
+                    .expectBody().isEmpty
+                    .responseHeaders
+                    .location?.toString()
+                    .shouldBe(EXAMPLE_URL)
             }
             scenario("not found") {
-                redirect("/abc")
+                redirect("abc")
                     .expectStatus().isNotFound
                     .expectBody()
-                    .toStr()
-                    .shouldContain("not found on this server")
+                    .jsonPath("message")
+                    .isEqualTo("Not Found")
             }
         }
     }
@@ -111,4 +106,14 @@ class UrlShortenerTest(private val webTestClient: WebTestClient) : FeatureSpec()
             .get()
             .uri("/$id")
             .exchange()
+
+    private fun ExchangeResult.shortenedUri() =
+        this
+            .responseHeaders
+            .location
+            .shouldNotBeNull()
+            .path
+            .substringAfter("/")
 }
+
+private const val EXAMPLE_URL = "https://www.google.com/qwerty"
