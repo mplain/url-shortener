@@ -1,0 +1,5 @@
+spring:
+  application.name: url-shortener
+server:
+  port: 9002
+  error.include-message: always
