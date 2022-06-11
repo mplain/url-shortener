@@ -3,9 +3,10 @@ package ru.mplain.urlshortener.service.encoder
 import io.seruco.encoding.base62.Base62
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import ru.mplain.urlshortener.configuration.profiles.SERUCO
 
 @Service
-@Profile("seruco")
+@Profile(SERUCO)
 class SerucoEncoderService : EncoderService {
 
     private val base62 = Base62.createInstance()

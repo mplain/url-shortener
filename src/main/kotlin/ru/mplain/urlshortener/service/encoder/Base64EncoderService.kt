@@ -2,10 +2,11 @@ package ru.mplain.urlshortener.service.encoder
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import ru.mplain.urlshortener.configuration.profiles.BASE_64
 import java.util.*
 
 @Service
-@Profile("base64")
+@Profile(BASE_64)
 class Base64EncoderService : EncoderService {
 
     override fun encode(long: Long): String =

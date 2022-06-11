@@ -19,7 +19,8 @@
 
 # Solution
 
-- First I google how to build an url shortener: shorturl.at/egmrD (warning! acid green background!)
+- First I google how to build an url shortener (warning! acid green background!)
+  https://medium.com/hackernoon/url-shortening-service-in-java-spring-boot-and-redis-d2a0f8848a1d
 - Initial design uses Redis to keep the sequence and to store urls, and base64 to encode them.
 - I originally wanted to send the shortened url in the response body as a full url (host + port). However, in production
   environment the application will most likely be behind a reverse proxy or a load balancer, so I decided to provide
@@ -27,7 +28,8 @@
   the correct host.
 - Redis might not be good enough even for MVP, we probably want shortened urls to be stored for longer than a day.
 
-- Second voyage to google: shorturl.at/aqIK0 (less of a tutorial, more about systems design and scaling)
+- Second voyage to google (less of a tutorial, more about systems design and scaling)
+  https://www.enjoyalgorithms.com/blog/design-a-url-shortening-service-like-tiny-url
 - We can create a shortened url by hashing the full url, but this results in rather long string, and if we truncate it
   we risk having duplicate values (same truncated hash for multiple values). The preferred approach seems to be using an
   auto-incremented id and encoding it to base62 or base64. However, the question is where to store the sequence.
@@ -48,10 +50,11 @@
 
 # Advanced features (more than MVP)
 
-+ use cache for fetching more popular urls (preferably LRU)
-+ use rate limiting for incoming requests
-+ multiple service implementations provided, with different profiles
+- multiple service implementations provided, with different profiles
+- use cache for fetching more popular urls (preferably LRU)
+- rate limiting (on load balancer)
 
-- enable autoconfiguration based on profile
-- client might provide a custom shortened url
-- client might provide the expiration time (or we increase it for paying customers)
+# Premium options
+- provide a custom shortened url
+- longer expiration time
+- higher rate limiting quota

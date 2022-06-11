@@ -6,38 +6,33 @@ import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
 import io.kotest.extensions.spring.SpringExtension
+import io.kotest.matchers.ints.shouldBeLessThanOrEqual
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.lettuce.core.RedisException
 import io.mockk.clearAllMocks
-import io.mockk.every
+import io.mockk.coEvery
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.data.redis.core.RedisTemplate
-import org.springframework.data.redis.core.ValueOperations
+import org.springframework.dao.DataAccessResourceFailureException
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.ExchangeResult
 import org.springframework.test.web.reactive.server.WebTestClient
+import ru.mplain.urlshortener.configuration.profiles.*
 import ru.mplain.urlshortener.model.ShortenUrlRequest
-import ru.mplain.urlshortener.repository.ShortenedUrlRepository
+import ru.mplain.urlshortener.service.dao.UrlShortenerDao
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-@ActiveProfiles("redis", "apache", "base64")
-class UrlShortenerTest(
-    private val webTestClient: WebTestClient,
-    private val repository: ShortenedUrlRepository,
-    private val redisTemplate: RedisTemplate<String, Any>
-) : FeatureSpec() {
+@ActiveProfiles(REDIS, BASE_62, APACHE)
+class UrlShortenerTest(private val webTestClient: WebTestClient) : FeatureSpec() {
 
     @SpykBean
-    lateinit var redisValueOps: ValueOperations<String, Any>
+    lateinit var dao: UrlShortenerDao
 
     override fun extensions(): List<Extension> = listOf(SpringExtension)
 
     override suspend fun afterEach(testCase: TestCase, result: TestResult) {
-        repository.deleteAll()
-        redisTemplate.delete("id")
+        dao.reset()
         clearAllMocks()
     }
 
@@ -48,21 +43,21 @@ class UrlShortenerTest(
                     .expectStatus().isCreated
                     .expectBody().isEmpty
                     .shortenedUri()
-                    .shouldBe("MQ")
+                    .length shouldBeLessThanOrEqual EXAMPLE_URL.length
             }
-            scenario("value exists") {
+            scenario("value exists + high sequence") {
                 shortenUrl(EXAMPLE_URL)
                     .expectStatus().isCreated
                     .expectBody().isEmpty
                     .shortenedUri()
-                    .shouldBe("MQ")
+                    .length shouldBeLessThanOrEqual EXAMPLE_URL.length
 
-                redisValueOps.increment("id", 1000000)
+                dao.incrementSequence(MAX_HASHIDS_VALUE - 2)
                 shortenUrl(EXAMPLE_URL)
                     .expectStatus().isCreated
                     .expectBody().isEmpty
                     .shortenedUri()
-                    .shouldBe("MTAwMDAwMg")
+                    .length shouldBeLessThanOrEqual EXAMPLE_URL.length
             }
             scenario("invalid url") {
                 shortenUrl("https://www.google.com/ qwerty")
@@ -72,7 +67,8 @@ class UrlShortenerTest(
                     .isEqualTo("Invalid url")
             }
             scenario("network error") {
-                every { redisValueOps.increment(any()) } throws RedisException("Network error")
+                coEvery { dao.nextval() } throws DataAccessResourceFailureException("Network error")
+
                 shortenUrl(EXAMPLE_URL)
                     .expectStatus().is5xxServerError
                     .expectBody()
@@ -127,3 +123,4 @@ class UrlShortenerTest(
 }
 
 private const val EXAMPLE_URL = "https://www.google.com/qwerty"
+private const val MAX_HASHIDS_VALUE = 9007199254740992L

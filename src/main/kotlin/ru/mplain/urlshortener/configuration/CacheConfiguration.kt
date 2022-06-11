@@ -11,6 +11,8 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
+import ru.mplain.urlshortener.configuration.profiles.PROD
+import ru.mplain.urlshortener.model.SHORTENED_URL
 import java.util.concurrent.TimeUnit
 
 @Configuration
@@ -19,7 +21,7 @@ class CacheConfiguration {
 
     @Bean
     @Primary
-    @Profile("prod")
+    @Profile(PROD)
     fun prodCacheManager(): CacheManager = object : ConcurrentMapCacheManager(SHORTENED_URL) {
         override fun createConcurrentMapCache(name: String): Cache = CacheBuilder
             .newBuilder()
@@ -32,9 +34,8 @@ class CacheConfiguration {
 
     @Bean
     @Primary
-    @Profile("!prod")
+    @Profile("!$PROD")
     fun testCacheManager(): CacheManager = NoOpCacheManager()
 }
 
-const val SHORTENED_URL = "shortened_url"
 private const val MAXIMUM_CACHE_SIZE = 1000L

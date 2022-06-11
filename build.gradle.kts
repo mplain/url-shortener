@@ -16,6 +16,7 @@ repositories {
 }
 
 dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
     implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
@@ -26,8 +27,9 @@ dependencies {
     implementation("io.seruco.encoding:base62:0.1.3")
     implementation("org.hashids:hashids:1.0.3")
     implementation("commons-validator:commons-validator:1.7")
-    implementation("com.github.vladimir-bukhtoyarov:bucket4j-core:7.5.0")
     implementation("org.springdoc:springdoc-openapi-webflux-ui:1.6.9")
+    implementation("org.springdoc:springdoc-openapi-kotlin:1.6.9")
+    implementation("de.flapdoodle.embed:de.flapdoodle.embed.mongo")
     implementation("it.ozimov:embedded-redis:0.7.3") { exclude(module = "slf4j-simple") }
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:5.3.0")

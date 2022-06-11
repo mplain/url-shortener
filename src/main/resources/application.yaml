@@ -1,5 +1,7 @@
 spring:
   application.name: url-shortener
+  mongodb.embedded.version: 3.4.5
+  profiles.active: mongo, base62, apache
 server:
   port: 9002
   error.include-message: always
