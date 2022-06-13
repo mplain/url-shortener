@@ -3,9 +3,6 @@ package ru.mplain.urlshortener.configuration.profiles
 // environment
 const val PROD = "prod"
 
-// rate limiter
-const val BUCKET4J = "bucket4j"
-
 // validation
 const val APACHE = "apache"
 
