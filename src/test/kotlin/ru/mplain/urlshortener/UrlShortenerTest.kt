@@ -21,13 +21,13 @@ import ru.mplain.urlshortener.configuration.profiles.*
 import ru.mplain.urlshortener.model.ShortenUrlRequest
 import ru.mplain.urlshortener.service.dao.UrlShortenerDao
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest
 @AutoConfigureWebTestClient
-@ActiveProfiles(REDIS, BASE_62, APACHE)
+@ActiveProfiles(MONGO, BASE_62, APACHE)
 class UrlShortenerTest(private val webTestClient: WebTestClient) : FeatureSpec() {
 
     @SpykBean
-    lateinit var dao: UrlShortenerDao
+    private lateinit var dao: UrlShortenerDao
 
     override fun extensions(): List<Extension> = listOf(SpringExtension)
 

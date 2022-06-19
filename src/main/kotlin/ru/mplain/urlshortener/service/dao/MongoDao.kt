@@ -1,5 +1,6 @@
 package ru.mplain.urlshortener.service.dao
 
+import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.context.annotation.Profile
@@ -37,7 +38,7 @@ class MongoDao(
         repository.findById(id).awaitSingleOrNull()?.url
 
     override suspend fun reset() {
-        repository.deleteAll().awaitSingle()
-        mongoOperations.findAndRemove(query, MongoSequence::class.java).awaitSingle()
+        repository.deleteAll().awaitFirstOrNull()
+        mongoOperations.findAndRemove(query, MongoSequence::class.java).awaitFirstOrNull()
     }
 }

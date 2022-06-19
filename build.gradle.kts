@@ -32,7 +32,7 @@ dependencies {
     implementation("de.flapdoodle.embed:de.flapdoodle.embed.mongo")
     implementation("it.ozimov:embedded-redis:0.7.3") { exclude(module = "slf4j-simple") }
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("io.kotest:kotest-runner-junit5-jvm:5.3.0")
+    testImplementation("io.kotest:kotest-runner-junit5-jvm:5.3.1")
     testImplementation("io.kotest.extensions:kotest-extensions-spring:1.1.1")
     testImplementation("com.ninja-squad:springmockk:3.1.1")
 }
