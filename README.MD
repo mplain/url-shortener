@@ -40,6 +40,10 @@
   by creating a sequence manually. In this case we separate the sequence and the table id column, which seems like a
   disadvantage. However, on second thought, this might be a better approach in terms of horizontal scaling.
 
+- Third voyage to google
+  https://alexmarquardt.com/2017/01/30/how-to-generate-unique-identifiers-for-use-with-mongodb
+- Fetch a batch of 1000 ids from the sequence, and store in memory
+
 # Design
 
 - frontend

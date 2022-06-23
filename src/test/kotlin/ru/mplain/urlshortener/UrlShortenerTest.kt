@@ -9,6 +9,7 @@ import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.ints.shouldBeLessThanOrEqual
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
@@ -32,27 +33,15 @@ class UrlShortenerTest(private val webTestClient: WebTestClient) : FeatureSpec()
     override fun extensions(): List<Extension> = listOf(SpringExtension)
 
     override suspend fun afterEach(testCase: TestCase, result: TestResult) {
-        dao.reset()
         clearAllMocks()
+        dao.reset()
     }
 
     init {
         feature("shorten url") {
             scenario("success") {
-                shortenUrl(EXAMPLE_URL)
-                    .expectStatus().isCreated
-                    .expectBody().isEmpty
-                    .shortenedUri()
-                    .length shouldBeLessThanOrEqual EXAMPLE_URL.length
-            }
-            scenario("value exists + high sequence") {
-                shortenUrl(EXAMPLE_URL)
-                    .expectStatus().isCreated
-                    .expectBody().isEmpty
-                    .shortenedUri()
-                    .length shouldBeLessThanOrEqual EXAMPLE_URL.length
+                coEvery { dao.nextval() } returns MAX_HASHIDS_VALUE
 
-                dao.incrementSequence(MAX_HASHIDS_VALUE - 2)
                 shortenUrl(EXAMPLE_URL)
                     .expectStatus().isCreated
                     .expectBody().isEmpty
@@ -75,6 +64,34 @@ class UrlShortenerTest(private val webTestClient: WebTestClient) : FeatureSpec()
                     .jsonPath("message")
                     .isEqualTo("Network error")
             }
+            scenario("duplicate key error - recover") {
+                coEvery { dao.nextval() } returns 10 andThen 10 coAndThen { callOriginal() }
+
+                val shortUrl = shortenUrl(EXAMPLE_URL)
+                    .expectStatus().isCreated
+                    .expectBody().isEmpty
+                    .shortenedUri()
+
+                shortenUrl(EXAMPLE_URL)
+                    .expectStatus().isCreated
+                    .expectBody().isEmpty
+                    .shortenedUri()
+                    .shouldNotBe(shortUrl)
+            }
+            scenario("duplicate key error - fatal") {
+                coEvery { dao.nextval() } returns 10
+
+                shortenUrl(EXAMPLE_URL)
+                    .expectStatus().isCreated
+                    .expectBody().isEmpty
+                    .shortenedUri()
+
+                shortenUrl(EXAMPLE_URL)
+                    .expectStatus().is5xxServerError
+                    .expectBody()
+                    .jsonPath("message")
+                    .isEqualTo("Duplicate key")
+            }
         }
         feature("redirect") {
             scenario("success") {
@@ -95,7 +112,7 @@ class UrlShortenerTest(private val webTestClient: WebTestClient) : FeatureSpec()
                     .expectStatus().isNotFound
                     .expectBody()
                     .jsonPath("message")
-                    .isEqualTo("Not Found")
+                    .isEqualTo("Not found")
             }
         }
     }

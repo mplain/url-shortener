@@ -22,8 +22,8 @@ class RedisDao(
 
     private val redisValueOps = redisTemplate.opsForValue()
 
-    override suspend fun incrementSequence(add: Long): Long =
-        redisValueOps.increment(SHORTENED_URL_SEQ, add).awaitSingle()
+    override suspend fun nextval(): Long =
+        redisValueOps.increment(SHORTENED_URL_SEQ, 1).awaitSingle()
 
     override suspend fun save(id: String, url: String): String = withContext(Dispatchers.IO) {
         repository.save(ShortenedUrl(id, url)).id
