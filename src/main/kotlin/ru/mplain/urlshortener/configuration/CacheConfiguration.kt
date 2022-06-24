@@ -12,7 +12,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import ru.mplain.urlshortener.configuration.profiles.PROD
-import ru.mplain.urlshortener.model.SHORTENED_URL
 import java.util.concurrent.TimeUnit
 
 @Configuration
@@ -38,4 +37,5 @@ class CacheConfiguration {
     fun testCacheManager(): CacheManager = NoOpCacheManager()
 }
 
+const val SHORTENED_URL = "shortened_url"
 private const val MAXIMUM_CACHE_SIZE = 1000L

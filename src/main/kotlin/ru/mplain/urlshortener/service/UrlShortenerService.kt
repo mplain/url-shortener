@@ -2,11 +2,10 @@ package ru.mplain.urlshortener.service
 
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.dao.DuplicateKeyException
-import org.springframework.http.HttpStatus
+import org.springframework.http.HttpStatus.*
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
-import org.springframework.web.server.ServerWebInputException
-import ru.mplain.urlshortener.model.SHORTENED_URL
+import ru.mplain.urlshortener.configuration.SHORTENED_URL
 import ru.mplain.urlshortener.service.dao.UrlShortenerDao
 import ru.mplain.urlshortener.service.encoder.EncoderService
 import ru.mplain.urlshortener.service.validator.ValidatorService
@@ -20,7 +19,7 @@ class UrlShortenerService(
 
     suspend fun shorten(url: String): String {
         val validated = validatorService.validate(url)
-        if (!validated) throw ServerWebInputException("Invalid url")
+        if (!validated) throw ResponseStatusException(BAD_REQUEST, "Invalid url")
         return save(url)
     }
 
@@ -35,7 +34,7 @@ class UrlShortenerService(
 
     @Cacheable(SHORTENED_URL)
     suspend fun getById(id: String): String =
-        dao.getById(id) ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Not found")
+        dao.getById(id) ?: throw ResponseStatusException(NOT_FOUND, "Not found")
 }
 
 private const val DEFAULT_RETRIES = 2

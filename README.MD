@@ -42,7 +42,8 @@
 
 - Third voyage to google
   https://alexmarquardt.com/2017/01/30/how-to-generate-unique-identifiers-for-use-with-mongodb
-- Fetch a batch of 1000 ids from the sequence, and store in memory
+- Mongo - fetch a batch of 1000 ids from the sequence and store in memory
+- Redis - Spring Repository does not support reactive operations nor direct insertion - replaced with Template
 
 # Design
 
