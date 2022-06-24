@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
+import org.springframework.dao.DuplicateKeyException
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate
 import org.springframework.data.redis.core.deleteAndAwait
 import org.springframework.data.repository.findByIdOrNull
@@ -26,6 +27,7 @@ class RedisDao(
         redisValueOps.increment(SHORTENED_URL_SEQ, 1).awaitSingle()
 
     override suspend fun save(id: String, url: String): String = withContext(Dispatchers.IO) {
+        if (repository.existsById(id)) throw DuplicateKeyException("Duplicate key")
         repository.save(ShortenedUrl(id, url)).id
     }
 
