@@ -48,7 +48,7 @@
 # Design
 
 - frontend
-- load balancer
+- load balancer (+ rate limiting)
 - application (multiple instances)
 - db cluster router
 - db cluster (sharding)
@@ -57,7 +57,6 @@
 
 - multiple service implementations provided, with different profiles
 - use cache for fetching more popular urls (preferably LRU)
-- rate limiting (on load balancer)
 
 # Premium options
 - provide a custom shortened url
