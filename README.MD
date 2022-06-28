@@ -1,4 +1,4 @@
-# The task
+# Task
 
 - Imagine you're building an URL shortener as a potential next-big-thing product. To test it, we would like to first
   have an MVP with only basic functionality.
