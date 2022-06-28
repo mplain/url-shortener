@@ -50,8 +50,7 @@
 - frontend
 - load balancer (+ rate limiting)
 - application (multiple instances)
-- db cluster router
-- db cluster (sharding)
+- db cluster (router + sharding)
 
 # Advanced features (more than MVP)
 
