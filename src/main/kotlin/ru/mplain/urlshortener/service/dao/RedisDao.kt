@@ -1,33 +1,39 @@
 package ru.mplain.urlshortener.service.dao
 
-import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.context.annotation.Profile
 import org.springframework.dao.DuplicateKeyException
 import org.springframework.data.redis.core.*
+import org.springframework.data.redis.serializer.RedisSerializationContext
 import org.springframework.stereotype.Service
 import ru.mplain.urlshortener.configuration.profiles.REDIS
+import ru.mplain.urlshortener.model.ShortenedUrl
 
 @Service
 @Profile(REDIS)
-class RedisDao(private val redisTemplate: ReactiveStringRedisTemplate) : UrlShortenerDao {
+class RedisDao(
+    private val redisTemplate: ReactiveStringRedisTemplate,
+    serializationContext: RedisSerializationContext<String, ShortenedUrl>
+) : UrlShortenerDao {
 
-    private val ops = redisTemplate.opsForValue()
+    private val sequenceOps = redisTemplate.opsForValue()
+    private val shortenedUrlOps = redisTemplate.opsForHash<String, String, ShortenedUrl>(serializationContext)
 
     override suspend fun nextval(): Long =
-        ops.incrementAndAwait(SEQUENCE, 1)
+        sequenceOps.incrementAndAwait(SEQUENCE, 1)
 
     override suspend fun save(id: String, url: String): String {
-        val saved = ops.setIfAbsentAndAwait(id, url)
+        val saved = shortenedUrlOps.putIfAbsentAndAwait(HASH_KEY, id, ShortenedUrl(id, url))
         if (!saved) throw DuplicateKeyException("Duplicate key")
         return id
     }
 
     override suspend fun getById(id: String): String? =
-        ops.getAndAwait(id)
+        shortenedUrlOps.getAndAwait(HASH_KEY, id)?.url
 
     override suspend fun reset() {
-        redisTemplate.connectionFactory.reactiveConnection.serverCommands().flushDb().awaitSingle()
+        redisTemplate.deleteAndAwait(HASH_KEY, SEQUENCE)
     }
 }
 
+private const val HASH_KEY = "shortened_url"
 private const val SEQUENCE = "shortened_url_sequence"
